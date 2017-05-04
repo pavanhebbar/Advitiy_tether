@@ -1,0 +1,3 @@
+1. In case of circular orbit using t_dot and p_dot, getting a variation on less than 4 cm in r. But not able to explain the graph. The starting point has to be apogee or perigee.
+
+2. When deorbited for 5 orbits, r changes by 5 km (decreases drastically at later time steps).
