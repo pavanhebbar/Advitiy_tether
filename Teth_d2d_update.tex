@@ -60,10 +60,15 @@ This document deals with day to day work on simulations of satellite deorbiting.
 
 \section{Setting B = 0:}
 \emph{May 5, 2017} \\
+
 Simulation was tried with magnetic field set to zero. Theta and phi results were as expected. Graph of r is yet to explain. 
 Though the changes in r are very small ( $O(10^{-8})$ ), it would be expected that the initial point would be an apogee or a 
-perigee. Therefore simulation was performed again to get a graph of rdot (checkout the $debugging_r$ branch)
+perigee. Therefore simulation was performed again to get a graph of rdot (checkout the $debugging\_r$ branch)
 
+$V_r$ graph is weird. Yet to be explained
+
+Initially it was felt that these numerical errors could be reduced by using $v_{\theta}, v_{\phi}$ instead of $\dot{\theta}, 
+\dot{\phi}$. But the value of $r$ kept on increasing on doing so. - Behavior yet to be explained
 
 
 
