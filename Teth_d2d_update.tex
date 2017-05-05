@@ -65,12 +65,83 @@ Simulation was tried with magnetic field set to zero. Theta and phi results were
 Though the changes in r are very small ( $O(10^{-8})$ ), it would be expected that the initial point would be an apogee or a 
 perigee. Therefore simulation was performed again to get a graph of rdot (checkout the $debugging\_r$ branch)
 
+\begin{figure}[H]
+ \centering
+ \includegraphics[width = 0.8\textwidth]{r_arr0.png}
+ \caption{Variation of satellite distace from centre of earth with time}
+\end{figure}
+
+\begin{figure}[H]
+ \centering
+ \includegraphics[width = 0.8\textwidth]{t_arr0.png}
+ \caption{Variation of co-latitude from centre of earth with time}
+\end{figure}
+
+\begin{figure}[H]
+ \centering
+ \includegraphics[width = 0.8\textwidth]{phi_arr0.png}
+ \caption{Variation of phi from centre of earth with time}
+\end{figure}
+
+
 $V_r$ graph is weird. Yet to be explained
 
 Initially it was felt that these numerical errors could be reduced by using $v_{\theta}, v_{\phi}$ instead of $\dot{\theta}, 
-\dot{\phi}$. But the value of $r$ kept on increasing on doing so. - Behavior yet to be explained
+\dot{\phi}$ since $v_{\theta}, v_{\phi}$ are of the same order as $v_r$. But the value of $r$ kept on increasing on doing so.
+Behavior yet to be explained
 
 
+\section{Setting B accordng to IGRF model:}
+\emph{May 5, 2017} \\
+
+Simulation for 2 days. ( Run time \~8 hrs)
+
+\subsection{Assumptions:}
+\begin{itemize}
+ \item No orbital perturbations due to oblateness of the earth
+ \item Current in the tether equal to the current induced in radial direction
+ \item Tether always pointing downwards.
+\end{itemize}
+
+\subsection{Results:}
+\begin{figure}[H]
+ \centering
+ \includegraphics[width = 0.8\textwidth]{2dayr_.png}
+ \caption{Variation of satellite distace from centre of earth with time}
+\end{figure}
+
+Initially the satellite orbit is very close to magnetic axis. So derobitting rate is small. After about half a day, magnetic 
+makes largest angle with orbit, thus deorbiting rate is highest and starts decreasing again. Smae behaviour repeated for 
+the next day. An average of about 15km/day.
+
+\begin{figure}[H]
+ \centering
+ \includegraphics[width = 0.8\textwidth]{2daythet_.png}
+ \caption{Variation of co-latitude with time}
+\end{figure}
+
+\begin{figure}[H]
+ \centering
+ \includegraphics[width = 0.8\textwidth]{2dayp_.png}
+ \caption{Variation of phi with time}
+\end{figure}
+
+Intuition says that the orbit should precess with time. But no such thing observed. (wondering why)
+
+\begin{figure}[H]
+ \centering
+ \includegraphics[width = 0.8\textwidth]{2dayt_p_.png}
+ \caption{Variation of theta and phi}
+\end{figure}
+
+
+\section{Things to do next:}
+\begin{itemize}
+ \item Include perturbations due to earth being an ellipsoid
+ \item Better model of current in Tether - Tanya and Anuj required
+ \item Debugging for r0 and thetherv
+ \item Keep wondering why no precession is observed or is it observed
+\end{itemize}
 
 
 \end{document}

@@ -1,2 +1,6 @@
 \contentsline {section}{\numberline {1}Introduction:}{3}{section.1}
 \contentsline {section}{\numberline {2}Setting B = 0:}{3}{section.2}
+\contentsline {section}{\numberline {3}Setting B accordng to IGRF model:}{5}{section.3}
+\contentsline {subsection}{\numberline {3.1}Assumptions:}{5}{subsection.3.1}
+\contentsline {subsection}{\numberline {3.2}Results:}{5}{subsection.3.2}
+\contentsline {section}{\numberline {4}Things to do next:}{7}{section.4}

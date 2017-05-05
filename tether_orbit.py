@@ -49,7 +49,7 @@ class orbit_state:
         return rdotdot, t_dotdot, p_dotdot
 
 class sat_param(orbit_state):
-    def __init__(self, r, rdot, theta, t_dot, phi, p_dot, length, mass, time, long0, resis, bool_B):
+    def __init__(self, r, rdot, theta, t_dot, phi, p_dot, length, mass, resis, bool_B):
         self.r = r
         self.rdot = rdot
         self.theta = theta
@@ -58,8 +58,7 @@ class sat_param(orbit_state):
         self.p_dot = p_dot
         self.leng = length
         self.mass = mass
-        self.time = time
-        self.long0 = long0
+        self.time = 0
         self.res = resis
         self.b_B = bool_B
 
@@ -78,12 +77,9 @@ class sat_param(orbit_state):
     def gettime(self):
         return self.time
 
-    def getlong0(self):
-        return self.long0
-
     def getlatlong(self):
         lat = np.pi/2.0 - self.theta
-        longit = self.phi - self.long0 - 2*np.pi*self.time/86164.09164
+        longit = self.phi - 2*np.pi*self.time/86164.09164
         longit = longit - np.floor(longit/(2*np.pi))*2*np.pi
         return lat, longit
 
@@ -161,22 +157,27 @@ def orbit(sat, tfinal, tstep):
 
     return r_array, theta_array, phi_array, lat_arr, long_arr
 
-def plotfig(name, title, xlabel, ylabel, xdata, ydata):
+def plotfig(name, title, xlabel, ylabel, xdata, ydata, legend):
     plt.figure()
     plt.title(title)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.plot(xdata, ydata)
+    for i in range(len(ydata)):
+        if (xdata[i] == []):
+            plt.plot(ydata[i], label = legend[i])
+        else:
+            plt.plot(xdata[i], ydata[i], label = legend[i])
+    plt.legend()
     plt.savefig(name)
     plt.close()
 
 def test_circular():
-    pratham = sat_param(7.048e6, 0, np.pi/2.0, -0.0010565973956662776, 0, -0.0001484950799313115, 100, 10, 0, 0, 10, 0)
+    pratham = sat_param(7.048e6, 0, np.pi/2.0, -0.0010565973956662776, 0, -0.0001484950799313115, 100, 10, 10, 0)
     r_array, theta_array, phi_array, lat_arr, long_arr = orbit(pratham, 10800, 0.001)
     time_array = np.linspace(0, 10800, len(r_array))
-    plotfig("r_arr0.png", "r v/s t", "t", "r", time_array, r_array)
-    plotfig("t_arr0.png", "theta v/s t", "t", "theta", time_array, theta_array)
-    plotfig("phi_arr0.png", "phi v/s t", "t", "phi", time_array, phi_array)
+    plotfig("r_arr0.png", "r v/s t", "t", "r", [time_array], [r_array], ["r"])
+    plotfig("t_arr0.png", "theta v/s t", "t", "theta", [time_array], [theta_array], ["theta"])
+    plotfig("phi_arr0.png", "phi v/s t", "t", "phi", [time_array], [phi_array], ["phi"])
 
     assert abs((np.min(r_array) - r_array[0])/r_array[0]) < 1e-5
     assert abs((np.max(r_array) - r_array[0])/r_array[0]) < 1e-5
