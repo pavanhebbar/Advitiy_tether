@@ -49,7 +49,7 @@ class orbit_state:
         return rdotdot, t_dotdot, p_dotdot
 
 class sat_param(orbit_state):
-    def __init__(self, r, rdot, theta, t_dot, phi, p_dot, length, mass, time, long0, resis):
+    def __init__(self, r, rdot, theta, t_dot, phi, p_dot, length, mass, time, long0, resis, bool_B):
         self.r = r
         self.rdot = rdot
         self.theta = theta
@@ -61,6 +61,7 @@ class sat_param(orbit_state):
         self.time = time
         self.long0 = long0
         self.res = resis
+        self.b_B = bool_B
 
     def getm(self):
         return self.mass
@@ -98,9 +99,13 @@ class sat_param(orbit_state):
 
     def accln(self):
         a_r = -G*M/self.r**2
-        B_r, B_t, B_p = self.getB()
-        a_t = -1*self.getcurr()*self.leng*B_p
-        a_p = self.getcurr()*self.leng*B_t
+        if (self.b_B == 1):
+            B_r, B_t, B_p = self.getB()
+            a_t = -1*self.getcurr()*self.leng*B_p
+            a_p = self.getcurr()*self.leng*B_t
+        elif (self.b_B == 0):
+            a_t = 0
+            a_p = 0
         return a_r, a_t, a_p
 
 def rk4_step(sat, tstep):
@@ -165,13 +170,20 @@ def plotfig(name, title, xlabel, ylabel, xdata, ydata):
     plt.savefig(name)
     plt.close()
 
-def main():
-    pratham = sat_param(7.048e6, 0, np.pi/2.0, -0.0010565973956662776, 0, -0.0001484950799313115, 100, 10, 0, 0, 10)
-    r_array, theta_array, phi_array, lat_arr, long_arr = orbit(pratham, 30000, 0.001)
-    time_array = np.linspace(0, 30000, len(r_array))
-    plotfig("r_arr.png", "r v/s t", "t", "r", time_array, r_array)
-    plotfig("t_arr.png", "theta v/s t", "t", "theta", time_array, theta_array)
-    plotfig("phi_arr.png", "phi v/s t", "t", "phi", time_array, phi_array)
+def test_circular():
+    pratham = sat_param(7.048e6, 0, np.pi/2.0, -0.0010565973956662776, 0, -0.0001484950799313115, 100, 10, 0, 0, 10, 0)
+    r_array, theta_array, phi_array, lat_arr, long_arr = orbit(pratham, 10800, 0.001)
+    time_array = np.linspace(0, 10800, len(r_array))
+    plotfig("r_arr0.png", "r v/s t", "t", "r", time_array, r_array)
+    plotfig("t_arr0.png", "theta v/s t", "t", "theta", time_array, theta_array)
+    plotfig("phi_arr0.png", "phi v/s t", "t", "phi", time_array, phi_array)
 
+    assert abs((np.min(r_array) - r_array[0])/r_array[0]) < 1e-5
+    assert abs((np.max(r_array) - r_array[0])/r_array[0]) < 1e-5
+    assert np.min(theta_array) > 0
+    assert np.max(theta_array) < np.pi 
+    assert np.min(phi_array) > 0
+    assert np.max(phi_array) < 2*np.pi
 
-main()
+if __name__ == "__main__":
+    test_circular()
