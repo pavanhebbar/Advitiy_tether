@@ -1,0 +1,127 @@
+classdef orbit3D      %Basic class to store and change orbital parameters
+    properties (Access = private)
+        r             %Standard notations of r, theta, phi
+        r_dot
+        theta
+        theta_dot
+        phi
+        phi_dot
+        time
+    end
+    
+    
+    methods
+        
+        function obj = orbit3D(r0, rd0, th0, thd0, phi0, phid0, t0)
+            %When no arguments are specified set all param to 0
+            %Else assign the required parameters
+            if nargin == 0    
+                obj.r = 0;
+                obj.r_dot = 0;
+                obj.theta = 0;
+                obj.theta_dot = 0;
+                obj.phi = 0;
+                obj.phi_dot = 0;
+                obj.time = 0;
+            elseif nargin == 7
+                obj.r = r0;
+                obj.r_dot = rd0;
+                obj.theta = th0;
+                obj.theta_dot = thd0;
+                obj.phi = phi0;
+                obj.phi_dot = phid0;
+                obj.time = t0;
+            else
+                disp('Specify all arguments or no arguments')
+                disp(nargin)
+            end
+        end
+        
+        function obj = setstate(obj, r, rd, th, th_d, phi, phi_d)
+            obj.r = r;
+            obj.r_dot = rd;
+            obj.theta = th;
+            obj.theta_dot = th_d;
+            obj.phi = phi;
+            obj.phi_dot = phi_d;
+        end
+        
+        function param = getstate(obj)
+            param(1) = obj.r;
+            param(2) = obj.r_dot;
+            param(3) = obj.theta;
+            param(4) = obj.theta_dot;
+            param(5) = obj.phi;
+            param(6) = obj.phi_dot;
+        end
+        
+        function time = gettime(obj)
+            time = obj.time;
+        end
+        
+        function pos = getpos(obj)
+            pos(1) = obj.r;
+            pos(2) = obj.theta;
+            pos(3) = obj.phi;
+        end
+        
+        function v = getvel_sph(obj)
+            v(1) = obj.r_dot;
+            v(2) = obj.r*obj.theta_dot;
+            v(3) = obj.r*sin(obj.theta)*obj.phi_dot;
+        end
+        
+        function dotdot = getdotdot(obj, a_r, a_t, a_p)
+            dotdot(1) = a_r + obj.r*obj.theta_dot^2 ...
+                 + obj.r*sin(obj.theta)^2*obj.phi_dot^2;
+            dotdot(2) = (a_t - 2*obj.r_dot*obj.theta_dot + ...
+                obj.r*obj.phi_dot^2*sin(obj.theta)*cos(obj.theta))/obj.r;
+            dotdot(3) = (a_p - 2*obj.r_dot*obj.phi_dot*sin(obj.theta) - ...
+                2*obj.r*obj.theta_dot*obj.phi_dot*cos(obj.theta))/...
+                    (obj.r*sin(obj.theta));
+        end
+        
+        function obj = rk4_step(obj, dt, acc_f)
+            param0 = obj.getstate();
+            t0 = obj.gettime();
+            k = zeros(4, 6);
+            for i=1:4
+                param = obj.getstate();
+                k(i, 1) = param(2)*dt;
+                k(i, 3) = param(4)*dt;
+                k(i, 5) = param(6)*dt;
+                acc = acc_f(obj);
+                dotdot = obj.getdotdot(acc(1), acc(2), acc(3));
+                k(i, 2) = dotdot(1)*dt;
+                k(i, 4) = dotdot(2)*dt;
+                k(i, 6) = dotdot(3)*dt;
+                if (i <= 2)
+                    p_new = param + k(i, :)/2;
+                    obj = obj.setstate(p_new(1), p_new(2), p_new(3),  ...
+                        p_new(4), p_new(5), p_new(6));
+                    obj = obj.settime(t0 + dt/2.0);
+                elseif (i == 3)
+                    p_new = param + k(i, :);
+                    obj = obj.setstate(p_new(1), p_new(2), p_new(3), ...
+                        p_new(4), p_new(5), p_new(6));
+                    obj = obj.settime(t0 + dt);
+                end
+            end
+            par_n = param0 + (k(1, :) + 2*k(2, :) + 2*k(3, :) + ...
+                k(4, :))/6.0;
+            par_n(5) = par_n(5) - floor(par_n(5)/(2*pi))*2*pi;
+            obj = obj.setstate(par_n(1), par_n(2), par_n(3), par_n(4), ...
+                par_n(5), par_n(6));
+            obj = obj.settime(t0 + dt);
+        end
+        
+    end
+    
+    
+    methods (Access = protected)
+        function obj = settime(obj, t)
+            obj.time = t;
+        end
+    end
+    
+end

@@ -1,9 +1,9 @@
-import numpy as np 
-import matplotlib.pyplot as plt 
+import numpy as np
+import matplotlib.pyplot as plt
 import igrf12
 
 G = 6.67408e-11
-M = 5.972e24  
+M = 5.972e24
 
 def getB_NED(lat, longit, r):
     B_x, B_y, B_z, B_t = igrf12.igrf12syn(0, 2017, 2, r, (np.pi/2 - lat)*180/np.pi, longit*180/np.pi)
@@ -108,7 +108,7 @@ def rk4_step(sat, tstep):
     r0, rdot0, theta0, t_dot0, phi0, p_dot0 = sat.get_state()
     t0 = sat.gettime()
     k = np.zeros((6, 4))
-    for i in range(3):
+    for i in range(4):
         r, rdot, theta, t_dot, phi, p_dot = sat.get_state()
         k[0, i] = rdot*tstep
         k[2, i] = t_dot*tstep
@@ -182,7 +182,7 @@ def test_circular():
     assert abs((np.min(r_array) - r_array[0])/r_array[0]) < 1e-5
     assert abs((np.max(r_array) - r_array[0])/r_array[0]) < 1e-5
     assert np.min(theta_array) > 0
-    assert np.max(theta_array) < np.pi 
+    assert np.max(theta_array) < np.pi
     assert np.min(phi_array) > 0
     assert np.max(phi_array) < 2*np.pi
 
