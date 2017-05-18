@@ -28,13 +28,16 @@ function states = getorbit(obj, tfinal, dt)
     n_t = int64(tfinal/100);
     states = zeros(n_t, 3);
     count = 1;
+    dis = 0;
     for i = 1:ntimes
-        obj = obj.rk4_step(dt, @two_bodyacc);
+        obj = obj.rk4_step(dt, @two_bodyacc, dis);
+        dis = 0;
         if mod(i-1, (100/dt)) == 0
             states(count, :) = obj.getpos();
             disp(count)
             disp(states(count, 1))
             count = count + 1;
+            dis = 1;
         end
     end
     disp(i)

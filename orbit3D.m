@@ -81,7 +81,10 @@ classdef orbit3D      %Basic class to store and change orbital parameters
                     (obj.r*sin(obj.theta));
         end
         
-        function obj = rk4_step(obj, dt, acc_f)
+        function obj = rk4_step(obj, dt, acc_f, dis)
+            if nargin == 3
+                dis = 0;
+            end
             param0 = obj.getstate();
             t0 = obj.gettime();
             k = zeros(4, 6);
@@ -92,6 +95,9 @@ classdef orbit3D      %Basic class to store and change orbital parameters
                 k(i, 5) = param(6)*dt;
                 acc = acc_f(obj);
                 dotdot = obj.getdotdot(acc(1), acc(2), acc(3));
+                if dis == 1
+                    disp(dotdot(1))
+                end
                 k(i, 2) = dotdot(1)*dt;
                 k(i, 4) = dotdot(2)*dt;
                 k(i, 6) = dotdot(3)*dt;
