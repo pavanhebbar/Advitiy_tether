@@ -12,7 +12,7 @@ classdef orbit3D      %Basic class to store and change orbital parameters
     
     methods
         
-        function obj = orbit3D(r0, rd0, th0, thd0, phi0, phid0, t0)
+        function obj = orbit3D(r0, rd0, th0, thd0, phi0, phid0, t0, format)
             %When no arguments are specified set all param to 0
             %Else assign the required parameters
             if nargin == 0    
@@ -23,14 +23,14 @@ classdef orbit3D      %Basic class to store and change orbital parameters
                 obj.phi = 0;
                 obj.phi_dot = 0;
                 obj.time = 0;
-            elseif nargin == 7
+            elseif (nargin == 7) || (nargin == 8)
                 obj.r = r0;
                 obj.r_dot = rd0;
                 obj.theta = th0;
                 obj.theta_dot = thd0;
                 obj.phi = phi0;
                 obj.phi_dot = phid0;
-                obj.time = t0;
+                obj.time = t0;              
             else
                 disp('Specify all arguments or no arguments')
                 disp(nargin)

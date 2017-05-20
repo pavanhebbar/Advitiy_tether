@@ -55,7 +55,7 @@ class orb_param3D:
         self._vt = states[3]
         self._vp = states[5]
 
-    def setpos(self, pos):
+    def setpos_sph(self, pos):
         """Set position."""
         self._r = pos[0]
         self._th = pos[1]
@@ -69,7 +69,7 @@ class orb_param3D:
         if (self._phi < 0):
             self._phi += 2*np.pi
 
-    def setvel(self, vel):
+    def setvel_sph(self, vel):
         """Set velocity."""
         self._vr = vel[0]
         self._vt = vel[1]
@@ -81,7 +81,8 @@ class orb_param3D:
         self._vr = np.dot(posxyz, vel)/np.linalg.norm(posxyz)
         self._vt = (self._vr*posxyz[2] - vel[2]*self._r)/(self._r**2 -
                                                           posxyz[2]**2)**0.5
-        self._vp = posxyz[0]*vel[1] - posxyz[1]*vel[2]
+        self._vp = ((posxyz[0]*vel[1] - posxyz[1]*vel[2])/
+                    np.linalg.norm(posxyz(0:2))
 
     def __settime(self, time):
         """Set time.
@@ -100,7 +101,7 @@ class orb_param3D:
         """Return time."""
         return self.__t
 
-    def getpos(self):
+    def getpos_sph(self):
         """Return position."""
         pos = [self._r, self._th, self._phi]
         return pos
@@ -169,7 +170,7 @@ def two_body(orbit):
     """Give acceleartion in a two body problem."""
     G = 6.67408e-11
     M_Earth = 5.972e24
-    pos = orbit.getpos()
+    pos = orbit.getpos_sph()
     acc_r = -1.0*G*M_Earth/pos[0]**2
     return [acc_r, 0, 0]
 
@@ -185,9 +186,9 @@ def getorbit(orbit, tfinal, dt):
     for i in range(ntimes):
         orbit.rk4_step(dt, two_body)
         if (i % (100/dt) == 0):
-            r_array[count] = orbit.getpos()[0]
-            theta_array[count] = orbit.getpos()[1]
-            phi_array[count] = orbit.getpos()[2]
+            r_array[count] = orbit.getpos_sph()[0]
+            theta_array[count] = orbit.getpos_sph()[1]
+            phi_array[count] = orbit.getpos_sph()[2]
             print (r_array[count])
             print (count)
             count += 1

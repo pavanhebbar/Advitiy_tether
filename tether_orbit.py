@@ -173,8 +173,8 @@ def plotfig(name, title, xlabel, ylabel, xdata, ydata, legend):
 
 def test_circular():
     pratham = sat_param(7.048e6, 0, np.pi/2.0, -0.0010565973956662776, 0, -0.0001484950799313115, 100, 10, 10, 0)
-    r_array, theta_array, phi_array, lat_arr, long_arr = orbit(pratham, 10800, 0.001)
-    time_array = np.linspace(0, 10800, len(r_array))
+    r_array, theta_array, phi_array, lat_arr, long_arr = orbit(pratham, 200, 0.001)
+    time_array = np.linspace(0, 200, len(r_array))
     plotfig("r_arr0.png", "r v/s t", "t", "r", [time_array], [r_array], ["r"])
     plotfig("t_arr0.png", "theta v/s t", "t", "theta", [time_array], [theta_array], ["theta"])
     plotfig("phi_arr0.png", "phi v/s t", "t", "phi", [time_array], [phi_array], ["phi"])

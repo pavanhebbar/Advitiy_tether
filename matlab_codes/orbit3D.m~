@@ -1,4 +1,4 @@
-classdef orbit3D      %Basic class to store and change orbital parameters
+classdef orbit3D      %Basic class to store and change orbital state
     properties (Access = private)
         r             %Standard notations of r, theta, phi
         r_dot
@@ -12,7 +12,7 @@ classdef orbit3D      %Basic class to store and change orbital parameters
     
     methods
         
-        function obj = orbit3D(r0, rd0, th0, thd0, phi0, phid0, t0)
+        function obj = orbit3D(r0, rd0, th0, thd0, phi0, phid0, t0, format)
             %When no arguments are specified set all param to 0
             %Else assign the required parameters
             if nargin == 0    
@@ -23,27 +23,27 @@ classdef orbit3D      %Basic class to store and change orbital parameters
                 obj.phi = 0;
                 obj.phi_dot = 0;
                 obj.time = 0;
-            elseif nargin == 7
+            elseif (nargin == 7) || (nargin == 8)
                 obj.r = r0;
                 obj.r_dot = rd0;
                 obj.theta = th0;
                 obj.theta_dot = thd0;
                 obj.phi = phi0;
                 obj.phi_dot = phid0;
-                obj.time = t0;
+                obj.time = t0;              
             else
                 disp('Specify all arguments or no arguments')
                 disp(nargin)
             end
         end
         
-        function obj = setstate(obj, r, rd, th, th_d, phi, phi_d)
-            obj.r = r;
-            obj.r_dot = rd;
-            obj.theta = th;
-            obj.theta_dot = th_d;
-            obj.phi = phi;
-            obj.phi_dot = phi_d;
+        function obj = setstate(obj, state)
+            obj.r = state(1);
+            obj.r_dot = state(2);
+            obj.theta = state(3);
+            obj.theta_dot = state(4);
+            obj.phi = state(5);
+            obj.phi_dot = state(6);
         end
         
         function param = getstate(obj)
