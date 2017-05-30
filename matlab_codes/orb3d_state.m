@@ -32,11 +32,12 @@ classdef orb3d_state     %Basic class to store and change orbital state
                 obj.phi = phi0;
                 obj.phi_dot = phid0;
                 obj.time = t0;
-                if (nargin == 8 && format == 'xyz')
+                if (nargin == 8 && strcmp(format,'xyz'))
                     obj.setpos_xyz(r0, th0, phi0)
                     obj.setvel_xyz(rd0, thd0, phid0)
-                elseif (format ~= 'sph')
+                elseif (strcmp(format,'sph'))
                     disp('Specify either xyz or sph') 
+                end
             else
                 disp('Specify all arguments or no arguments')
                 disp(nargin)

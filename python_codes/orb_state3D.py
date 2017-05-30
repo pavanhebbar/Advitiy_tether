@@ -81,8 +81,8 @@ class orb_param3D:
         self._vr = np.dot(posxyz, vel)/np.linalg.norm(posxyz)
         self._vt = (self._vr*posxyz[2] - vel[2]*self._r)/(self._r**2 -
                                                           posxyz[2]**2)**0.5
-        self._vp = ((posxyz[0]*vel[1] - posxyz[1]*vel[2])/
-                    np.linalg.norm(posxyz(0:2))
+        self._vp = ((posxyz[0]*vel[1] - posxyz[1]*vel[2]) /
+                    np.linalg.norm(posxyz[0:2]))
 
     def __settime(self, time):
         """Set time.
