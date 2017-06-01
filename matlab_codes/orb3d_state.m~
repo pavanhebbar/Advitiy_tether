@@ -173,18 +173,16 @@ classdef orb3d_state     % Basic class to store and change orbital state
         
         function inc = get_inc(obj)
             %Return the inclination of orbit
-            h_vec = obj.sp_ang_mom();
-            inc = arccos(h_vec(3)/norm(h_vec));
+            h_vec = obj.sp_ang_mom()
+            inc = arccos(h_vec[3]/norm(h_vec))
         end
         
         function cap_omega = get_ascnode(obj)
             %Return the longitude of ascending node
-            h_vec = obj.sp_ang_mom();
-            cap_omega = atan2(h_vec(1), -1*h(2));
-            if cap_omega < 0
-                cap_omega = cap_omega + 2*pi;
-            end
-        end
+            h_vec = obj.sp_ang_mom()
+            cap_omega = atan2(h_vec[1], -1*h[2])
+            if cap_omega < 0:
+                cap_omega = cap_omega + 2*pi
         
     end
     

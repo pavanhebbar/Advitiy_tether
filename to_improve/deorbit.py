@@ -28,8 +28,8 @@ def plot_param(n_suffix, n_prefix, tfinal, r_arr, t_arr, p_arr, lat_arr, long_ar
 
 def main():
     print('starting')
-    r_arr, t_arr, p_arr, lat_arr, long_arr, curr_arr, vr_arr, vt_arr, vp_arr, acc_arr, pow1_arr, pow2_arr, en_arr = deorbit_sat(7.048e6, 0.0, 7520.083379159564, 98.0, np.pi/2.0, 0.0, 100.0, 10.0, 10.0, 86400.0, 0.001)
-    plot_param("1day", "98", 86400, r_arr, t_arr, p_arr, lat_arr, long_arr, curr_arr, vr_arr, vt_arr, vp_arr, acc_arr, pow1_arr, pow2_arr, en_arr)
+    r_arr, t_arr, p_arr, lat_arr, long_arr, curr_arr, vr_arr, vt_arr, vp_arr, acc_arr, pow1_arr, pow2_arr, en_arr = deorbit_sat(7.048e6, 0.0, 7520.083379159564, 98.0, np.pi/2.0, 0.0, 100.0, 10.0, 10.0, 400.0, 0.001)
+    plot_param("test", "98", 400, r_arr, t_arr, p_arr, lat_arr, long_arr, curr_arr, vr_arr, vt_arr, vp_arr, acc_arr, pow1_arr, pow2_arr, en_arr)
     return r_arr, t_arr, p_arr, lat_arr, long_arr, curr_arr, vr_arr, vt_arr, vp_arr, acc_arr, pow1_arr, pow2_arr, en_arr
 
 if __name__=="__main__":

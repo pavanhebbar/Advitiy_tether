@@ -9,31 +9,31 @@ import matplotlib.pyplot as plt
 
 
 class orb_param3D:
-    """Set of basic functions for th    e 3D orbit.
+    """Set of basic functions for  3D orbit.
 
     All these functions assume reduced mass concept.
     """
 
     def __init__(self, r=0, v_r=0, theta=0, v_t=0, phi=0, v_p=0, t0=0,
-                 format='sph'):
+                 form='sph'):
         """Initialize the class.
 
         Only takes 0 or 7 arguments. If 0 arguments are passed object
         placed at the centre
         """
-        if (len(locals()) == 0 or len(locals()) == 8 or (len(locals()) == 9)):
-            self._r = r
-            self._th = theta
-            self._phi = phi
-            self._vr = v_r
-            self._vt = v_t
-            self._vp = v_p
-            self.__t = t0
-            if (format == 'xyz'):
+        if (len(locals()) == 1 or len(locals()) == 8 or (len(locals()) == 9)):
+            self._r = r           # radial position
+            self._th = theta      # theta position
+            self._phi = phi       # phi position
+            self._vr = v_r        # radial velocity
+            self._vt = v_t        # velocity along theta
+            self._vp = v_p        # velocity along phi
+            self.__t = t0  # staring time of simulation. Better give deci-year
+            if (form == 'xyz'):
                 self.setpos_xyz([r, theta, phi])
                 self.setvel_xyz([v_r, v_t, v_p])
-            elif (format != 'sph'):
-                print ("format only takes arguments 'xyz' or 'sph'")
+            elif (form != 'sph'):
+                print ("form only takes arguments 'xyz' or 'sph'")
         else:
             print ('Give no arguments or atleast 7 arguments')
             print ('You have given ', len(locals()), ' arguments')
@@ -93,8 +93,8 @@ class orb_param3D:
 
     def getstate(self):
         """Return states."""
-        states = [self._r, self._vr, self._th, self._vt,
-                  self._phi, self._vp]
+        states = np.array([self._r, self._vr, self._th, self._vt,
+                           self._phi, self._vp])
         return states
 
     def gettime(self):
@@ -103,7 +103,7 @@ class orb_param3D:
 
     def getpos_sph(self):
         """Return position."""
-        pos = [self._r, self._th, self._phi]
+        pos = np.array([self._r, self._th, self._phi])
         return pos
 
     def getpos_xyz(self):
@@ -111,11 +111,11 @@ class orb_param3D:
         x = self._r*np.sin(self._th)*np.cos(self._phi)
         y = self._r*np.sin(self._th)*np.sin(self._phi)
         z = self._r*np.cos(self._th)
-        return [x, y, z]
+        return np.array([x, y, z])
 
     def getvel_sph(self):
         """Return velocity in spherical coordinates."""
-        return [self._vr, self._vt, self._vp]
+        return np.array([self._vr, self._vt, self._vp])
 
     def getvel_xyz(self):
         """Return velocity in cartesian coordinates."""
@@ -126,7 +126,7 @@ class orb_param3D:
               self._vt*np.cos(self._th)*np.sin(self._phi) +
               self._vp*np.cos(self._phi))
         vz = self._vr*np.cos(self._th) - self._vt*np.sin(self._th)
-        return [vx, vy, vz]
+        return np.array([vx, vy, vz])
 
     def getvdot(self, a_r, a_t, a_p):
         """Return vrdot, vtdot, vpdot."""
@@ -135,7 +135,7 @@ class orb_param3D:
                        self._vp**2/np.tan(self._th))/self._r
         vpdot = a_p - (self._vr*self._vp +
                        self._vt*self._vp/np.tan(self._th))/self._r
-        return [vrdot, vtdot, vpdot]
+        return np.array([vrdot, vtdot, vpdot])
 
     def rk4_step(self, dt, acc_f):
         """Return the state after time dt."""
@@ -165,6 +165,25 @@ class orb_param3D:
         self.setstates(state_n)
         self.__settime(t0 + dt)
 
+    def sp_ang_mom(self):
+        """Return the specific angular momentum of satellite."""
+        pos = self.getpos_xyz()
+        vel = self.getvel_xyz()
+        return np.cross(pos, vel)
+
+    def get_inc(self):
+        """Return inclination of the orbit."""
+        h = self.sp_ang_mom()
+        return np.arccos(h[2]/np.linalg.norm(h))
+
+    def get_ascnode(self):
+        """Get longitude of ascending node."""
+        h = self.sp_ang_mom()
+        cap_omega = np.arctan2(h[0], -1*h[1])
+        if cap_omega < 0:
+            cap_omega += 2*np.pi
+        return cap_omega
+
 
 def two_body(orbit):
     """Give acceleartion in a two body problem."""
@@ -175,62 +194,5 @@ def two_body(orbit):
     return [acc_r, 0, 0]
 
 
-def getorbit(orbit, tfinal, dt):
-    """Calculate the orbit."""
-    ntimes = (int)(tfinal/dt)
-    n_t = (int)(tfinal/100)
-    r_array = np.zeros(n_t)
-    theta_array = np.zeros(n_t)
-    phi_array = np.zeros(n_t)
-    count = 0
-    for i in range(ntimes):
-        orbit.rk4_step(dt, two_body)
-        if (i % (100/dt) == 0):
-            r_array[count] = orbit.getpos_sph()[0]
-            theta_array[count] = orbit.getpos_sph()[1]
-            phi_array[count] = orbit.getpos_sph()[2]
-            print (r_array[count])
-            print (count)
-            count += 1
-    return r_array, theta_array, phi_array
-
-
-def plotfig(name, title, xlabel, ylabel, xdata, ydata, legend):
-    """Plot figure."""
-    plt.figure()
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
-    for i in range(len(ydata)):
-        if (xdata[i] == []):
-            plt.plot(ydata[i], label=legend[i])
-        else:
-            plt.plot(xdata[i], ydata[i], label=legend[i])
-    plt.legend()
-    plt.savefig(name)
-    plt.close()
-
-
-def test_circular():
-    """Test orbit function."""
-    pratham = orb_param3D(7.048e6, 0, np.pi/2.0, -7446.8984446559243, 0,
-                          -1046.5933233558835, 0)
-    r_array, theta_array, phi_array = getorbit(pratham,
-                                               200, 0.001)
-    time_array = np.linspace(0, 200, len(r_array))
-    plotfig("test_r.png", "r v/s t", "t", "r", [time_array], [r_array], ["r"])
-    plotfig("test_th.png", "theta v/s t", "t", "theta", [time_array],
-            [theta_array], ["theta"])
-    plotfig("test_p.png", "phi v/s t", "t", "phi", [time_array], [phi_array],
-            ["phi"])
-
-    assert abs((np.min(r_array) - r_array[0])/r_array[0]) < 1e-5
-    assert abs((np.max(r_array) - r_array[0])/r_array[0]) < 1e-5
-    assert np.min(theta_array) > 0
-    assert np.max(theta_array) < np.pi
-    assert np.min(phi_array) > 0
-    assert np.max(phi_array) < 2*np.pi
-
-
 if __name__ == "__main__":
-    test_circular()
+    print ("Nothing to do. just import")
