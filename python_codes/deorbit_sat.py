@@ -14,17 +14,18 @@ def deorbit(r0, vr0, v_tan0, inc, theta0, phi0, tether_len, tether_res,
     tether_sat = teth.tether(tether_len, tether_res)
     satel = sat.satellite(sat_m, sat_I, 1, tether_sat, r0, v_r, theta0, v_t,
                           phi0, v_p, 0)
-    state_arr, orb_arr, pow_arr, en_arr, acc_arr = sat.getorbit(satel, tfinal,
-                                                                tstep)
+    state_arr, orb_arr, pow_arr, en_arr, acc_arr, emf_arr = sat.getorbit(
+        satel, tfinal, tstep)
     pow_arr2 = np.zeros(len(pow_arr))
     for i in range(len(pow_arr)):
         pedot = sat.G*sat.M_EARTH*sat_m/state_arr[0, i]**2*state_arr[1, i]
         vel = [state_arr[1, i], state_arr[3, i], state_arr[5, i]]
         pow_arr2[i] = np.dot(acc_arr[:, i], vel)*sat_m + pedot
-    return state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr
+    return state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr, emf_arr
 
 
-def plotparam(n_prefix, n_suffix, tfinal, states, orb_elems, pow_diff, en_arr):
+def plotparam(n_prefix, n_suffix, tfinal, states, orb_elems, pow_diff, en_arr,
+              emf_arr):
     """Plot the orbital state vectors and elements."""
     time_arr = np.linspace(0, tfinal, len(states[0, :]))
     sat.plotfig(n_prefix + '_r_' + n_suffix, "Plot of r with time", 't', 'r',
@@ -53,15 +54,18 @@ def plotparam(n_prefix, n_suffix, tfinal, states, orb_elems, pow_diff, en_arr):
                 'anomaly', [time_arr], [orb_elems[5, :]], ['true anomaly'])
     sat.plotfig(n_prefix + '_en_' + n_suffix, "Plot of energy with time", 't',
                 'en', [time_arr], [en_arr], ['energy'])
+    sat.plotfig(n_prefix + '_emf_' + n_suffix, "Plot of emf with time", 't',
+                'emf', [time_arr], [-1*emf_arr], ['emf'])
     sat.plotfig(n_prefix + '_pow_' + n_suffix, "Comparin power arrays", 't',
                 'diff', [time_arr], [pow_diff], ['pow_arr - pow_arr2'])
 
 
 def main():
     """Deorbit the satellite."""
-    state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr = deorbit(
-        7.048e6, 0.0, 7520.083379159564, 98.0, np.pi/2.0, 0.0, 100.0, 10.0,
-        10.0, np.zeros((3, 3)), 6400.0, 0.001)
+    state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr, emf_arr = deorbit(
+        7.378e6, 0.0, 7349.982044408744, 91.0, np.pi/2.0, 0.0, 500.0, 10.0,
+        10.0, np.zeros((3, 3)), 86400.0, 0.1)
     powdiff = pow_arr - pow_arr2
-    plotparam('98', '1orb', 6400.0, state_arr, orb_arr, powdiff, en_arr)
-    return state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr
+    plotparam('90', 'test', 86400.0, state_arr, orb_arr, powdiff, en_arr,
+              emf_arr)
+    return state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr, emf_arr

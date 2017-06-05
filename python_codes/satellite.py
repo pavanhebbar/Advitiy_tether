@@ -169,12 +169,13 @@ def getorbit(sat, tfinal, dt):
     acc_arr = np.zeros((3, n_t))
     pow_arr = np.zeros(n_t)
     en_arr = np.zeros(n_t)
+    emf_arr = np.zeros(n_t)
     en0 = sat.geten()
     count = 0
     for i in range(ntimes):
         sat.rk4_step(dt, tot_acc)
         en1 = sat.geten()
-        pow1 = (en1 - en0)*1000
+        pow1 = (en1 - en0)/dt
         en0 = en1
         if (i % (100/dt) == 0):
             state_arr[:, count] = sat.getstate()
@@ -182,10 +183,13 @@ def getorbit(sat, tfinal, dt):
             acc_arr[:, count] = tot_acc(sat)
             pow_arr[count] = pow1
             en_arr[count] = sat.geten()
+            tether = sat.gettether()
+            emf_arr[count] = tether.getcurr(sat)*tether.getres()
             print (state_arr[0, count])
+            print (state_arr[2, count])
             print (count)
             count += 1
-    return state_arr, orbelem_arr, pow_arr, en_arr, acc_arr
+    return state_arr, orbelem_arr, pow_arr, en_arr, acc_arr, emf_arr
 
 
 def plotfig(name, title, xlabel, ylabel, xdata, ydata, legend):
