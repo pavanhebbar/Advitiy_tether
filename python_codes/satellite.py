@@ -167,25 +167,36 @@ def getorbit(sat, tfinal, dt):
     state_arr = np.zeros((6, n_t))
     orbelem_arr = np.zeros((6, n_t))
     acc_arr = np.zeros((3, n_t))
+    vdot_arr1 = np.zeros((3, n_t))
+    vdot_arr2 = np.zeros((3, n_t))
     pow_arr = np.zeros(n_t)
     en_arr = np.zeros(n_t)
     en0 = sat.geten()
+    v0 = sat.getvel_sph()
     count = 0
     for i in range(ntimes):
         sat.rk4_step(dt, tot_acc)
         en1 = sat.geten()
-        pow1 = (en1 - en0)*1000
+        pow1 = (en1 - en0)/dt
         en0 = en1
+        v1 = sat.getvel_sph()
+        vdot1 = (v1 - v0)/dt
+        v0 = v1
         if (i % (100/dt) == 0):
             state_arr[:, count] = sat.getstate()
             orbelem_arr[:, count] = sat.orb_elem()
             acc_arr[:, count] = tot_acc(sat)
+            vdot_arr1[:, count] = sat.getvdot(acc_arr[0, count],
+                                              acc_arr[1, count],
+                                              acc_arr[2, count])
+            vdot_arr2[:, count] = vdot1
             pow_arr[count] = pow1
             en_arr[count] = sat.geten()
             print (state_arr[0, count])
             print (count)
             count += 1
-    return state_arr, orbelem_arr, pow_arr, en_arr, acc_arr
+    return (state_arr, orbelem_arr, pow_arr, en_arr, acc_arr, vdot_arr1,
+            vdot_arr2)
 
 
 def plotfig(name, title, xlabel, ylabel, xdata, ydata, legend):

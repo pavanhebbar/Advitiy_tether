@@ -14,14 +14,13 @@ def deorbit(r0, vr0, v_tan0, inc, theta0, phi0, tether_len, tether_res,
     tether_sat = teth.tether(tether_len, tether_res)
     satel = sat.satellite(sat_m, sat_I, 1, tether_sat, r0, v_r, theta0, v_t,
                           phi0, v_p, 0)
-    state_arr, orb_arr, pow_arr, en_arr, acc_arr = sat.getorbit(satel, tfinal,
-                                                                tstep)
+    state_arr, orb_arr, pow_arr, en_arr, acc_arr, vdot_arr1, vdot_arr2 = sat.getorbit(satel, tfinal, tstep)
     pow_arr2 = np.zeros(len(pow_arr))
     for i in range(len(pow_arr)):
         pedot = sat.G*sat.M_EARTH*sat_m/state_arr[0, i]**2*state_arr[1, i]
         vel = [state_arr[1, i], state_arr[3, i], state_arr[5, i]]
         pow_arr2[i] = np.dot(acc_arr[:, i], vel)*sat_m + pedot
-    return state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr
+    return state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr, vdot_arr1, vdot_arr2
 
 
 def plotparam(n_prefix, n_suffix, tfinal, states, orb_elems, pow_diff, en_arr):
@@ -59,9 +58,10 @@ def plotparam(n_prefix, n_suffix, tfinal, states, orb_elems, pow_diff, en_arr):
 
 def main():
     """Deorbit the satellite."""
-    state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr = deorbit(
-        7.048e6, 0.0, 7520.083379159564, 98.0, np.pi/2.0, 0.0, 100.0, 10.0,
-        10.0, np.zeros((3, 3)), 6400.0, 0.001)
+    print('starting')
+    state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr, vdot_arr1, vdot_arr2 = deorbit(
+        6.91e6, 0.0, 7594.80416494773, 98.0, np.pi/2.0, 0.0, 100.0, 10.0,
+        10.0, np.zeros((3, 3)), 172800.0, 0.1)
     powdiff = pow_arr - pow_arr2
-    plotparam('98', '1orb', 6400.0, state_arr, orb_arr, powdiff, en_arr)
-    return state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr
+    plotparam('98', '1orb', 172800.0, state_arr, orb_arr, powdiff, en_arr)
+    return state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr, vdot_arr1, vdot_arr2

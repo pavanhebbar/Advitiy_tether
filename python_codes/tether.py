@@ -63,10 +63,16 @@ def getB_NED(lat, longit, r, t):  # time in decimal year
     return B_x*10**-9, B_y*10**-9, B_z*10**-9
 
 
-def getB_sph(lat, longit, r, t):
-    """Return B in spherical coordinates."""
+def getB_ecef(lat, longit, r, t):
+    """Return B in ECEF spherical coordinates."""
     B_north, B_east, B_down = getB_NED(lat, longit, r, t)
     B_r = -1*B_down
     B_t = -1*B_north
     B_p = B_east
     return B_r, B_t, B_p
+
+def getB_sph(lat, longit, r, t):
+    """Return B in spherical coordinates - ECI."""
+    B_r_ec, B_t_ec, B_p_ec = getB_ecef(lat, longit, r, t)
+    alp = 2*np.pi/86164.09164*t
+    
