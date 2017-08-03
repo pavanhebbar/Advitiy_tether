@@ -65,3 +65,7 @@ def main():
     powdiff = pow_arr - pow_arr2
     plotparam('98', '1orb', 172800.0, state_arr, orb_arr, powdiff, en_arr)
     return state_arr, orb_arr, pow_arr, pow_arr2, en_arr, acc_arr, vdot_arr1, vdot_arr2
+
+
+if __name__ == '__main__':
+    main()

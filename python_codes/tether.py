@@ -1,17 +1,18 @@
 """Define a class to handle tether dynamics."""
 
-import sys
+
 import numpy as np
 import igrf12
 
 
-class tether:
+class Tether(object):
     """Class to handle tether dynamics."""
 
     def __init__(self, tether_len=0, tether_res=0):
         """Initialize class."""
         self._len = tether_len
         self._res = tether_res
+        self._ang = 0
 
     def setlen(self, length):
         """Set length of tether."""
@@ -28,6 +29,10 @@ class tether:
     def getres(self):
         """Return resistance of tether."""
         return self._res
+
+    def getangle(self):
+        """Return the angle of tether."""
+        return self._ang
 
     def getB(self, sat):
         """Return magnetic field at satellite position."""
@@ -75,4 +80,3 @@ def getB_sph(lat, longit, r, t):
     """Return B in spherical coordinates - ECI."""
     B_r_ec, B_t_ec, B_p_ec = getB_ecef(lat, longit, r, t)
     alp = 2*np.pi/86164.09164*t
-    
