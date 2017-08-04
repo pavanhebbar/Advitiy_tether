@@ -34,12 +34,12 @@ class Tether(object):
         """Return the angle of tether."""
         return self._ang
 
-    def getB(self, sat):
+    def getmag(self, sat):
         """Return magnetic field at satellite position."""
         lat, lon = sat.getlatlong()
-        r = sat.getpos_sph()[0]
-        t = sat.gettime()
-        return getB_sph(lat, lon, r, t)
+        rad = sat.getpos_sph()[0]
+        time = sat.gettime()
+        return getB_sph(lat, lon, rad, time)
 
     def getcurr(self, sat):
         """Return current."""

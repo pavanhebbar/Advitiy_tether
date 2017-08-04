@@ -235,8 +235,10 @@ def zero_acc(body):
 def test_rk4():
     """Test rk4 function."""
     var = OrbParam3D([1.0, 0.0, 0.0], [0.0, 1.0, 0.0], 0, 'xyz')
-    for i in range(10000):
+    count = 0
+    while count < 10000:
         var.rk4_step(0.001, zero_acc)
+        count += 1
     assert (np.linalg.norm(var.getpos_xyz() - np.array([1.0, 10.0, 0.0]))
             < 1e-5)
 

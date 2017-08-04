@@ -3,13 +3,14 @@
 import numpy as np
 import orbit_state as orb
 import tether as teth
-
+import forces
+import matplotlib.pyplot as plt
 
 G = 6.67408e-11
 M_EARTH = 5.972e24
 
 
-class Satellite(orb.orb_param3D):
+class Satellite(orb.OrbParam3D):
     """Set of basic functions to handle satellite.
 
     All these functions assume that the satellite is revolving around earth
@@ -17,7 +18,7 @@ class Satellite(orb.orb_param3D):
     """
 
     def __init__(self, satmass, state0, form='sph', time0=0,
-                 bool_tether=0, tether=teth.tether()):
+                 bool_tether=0, tether=teth.Tether()):
         """Initialize class.
 
         Inputs:
@@ -32,6 +33,7 @@ class Satellite(orb.orb_param3D):
         super(Satellite, self).__init__([state0[0], state0[2], state0[4]],
                                         [state0[1], state0[3], state0[5]],
                                         time0, form)
+        self._mm = M_EARTH
         self._sm = satmass
         self._boolt = bool_tether
         self._teth = tether
@@ -121,9 +123,19 @@ class Satellite(orb.orb_param3D):
         return h_mom, inc, cap_omega, ecc, small_omega, true_th
 
 
+def twobody_acc(sat):
+    """Get the two body acceleration on the satellite."""
+    pos = sat.getpos_sph()
+    g_acc = [-G*M_EARTH/pos[0]**2, 0, 0]
+    return g_acc
+
+
 def tot_acc(sat):
     """Get the total acceleration on the satellite."""
-    return 0, 0, 0
+    pos = sat.getpos_sph()
+    lat = sat.getlatlon()[0]
+    g_acc = forces.gravity_wgs84(pos[0], lat)
+    return g_acc
 
 
 def getorbit(sat, tfinal, tstep, trec):
@@ -145,8 +157,52 @@ def getorbit(sat, tfinal, tstep, trec):
         if i % (trec/tstep) == 0:
             state_arr[:, count] = sat.getstate()
             orbelem_arr[:, count] = sat.orb_elem()
-            s_major_arr[:, count] = sat.get_a()
+            s_major_arr[count] = sat.get_a()
             print state_arr[0, count]
             print count
             count += 1
     return (state_arr, orbelem_arr, s_major_arr)
+
+
+def plotfig(name, title, xlabel, ylabel, xdata, ydata, legend):
+    """Plot figure."""
+    plt.figure()
+    plt.title(title)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    for i, elem in enumerate(ydata):
+        plt.plot(xdata[i], elem, label=legend[i])
+    plt.legend()
+    plt.savefig(name)
+    plt.close()
+
+
+def test_circular():
+    """Test orbit function."""
+    state = np.array([7.048e6, 0.0, np.pi/2.0, -7446.8984446559243, 0.0,
+                      -1046.5933233558835])
+    pratham = Satellite(10.0, state)
+    state_arr, orbelem_arr = getorbit(pratham, 86400, 0.1, 100)[:2]
+    time_array = np.linspace(0, 400, len(state_arr[0, :]))
+    plotfig("test_r.png", "r v/s t", "t", "r", [time_array], [state_arr[0, :]],
+            ["r"])
+    plotfig("test_th.png", "theta v/s t", "t", "theta", [time_array],
+            [state_arr[2, :]], ["theta"])
+    plotfig("test_p.png", "phi v/s t", "t", "phi", [time_array],
+            [state_arr[4, :]], ["phi"])
+    plotfig("test_comega.png", "omega v/s t", "t", "omega", [time_array],
+            [orbelem_arr[2, :]], ["omega"])
+    # r_array = state_arr[0, :]
+    # theta_array = state_arr[2, :]
+    # phi_array = state_arr[4, :]
+
+    # assert abs((np.min(r_array) - r_array[0])/r_array[0]) < 1e-5
+    # assert abs((np.max(r_array) - r_array[0])/r_array[0]) < 1e-5
+    # assert np.min(theta_array) > 0
+    # assert np.max(theta_array) < np.pi
+    # assert np.min(phi_array) > 0
+    # assert np.max(phi_array) < 2*np.pi
+    return orbelem_arr[2, :]*180/np.pi
+
+
+test_circular()
