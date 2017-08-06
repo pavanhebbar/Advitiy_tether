@@ -5,6 +5,7 @@ import orbit_state as orb
 import tether as teth
 import forces
 import matplotlib.pyplot as plt
+import rk4_step as rk
 
 G = 6.67408e-11
 M_EARTH = 5.972e24
@@ -17,7 +18,7 @@ class Satellite(orb.OrbParam3D):
     unless specified
     """
 
-    def __init__(self, satmass, state0, form='sph', time0=0,
+    def __init__(self, satmass=0, state0=np.zeros(6), form='sph', time0=0,
                  bool_tether=0, tether=teth.Tether()):
         """Initialize class.
 
@@ -64,8 +65,9 @@ class Satellite(orb.OrbParam3D):
 
     def geten(self):
         """Return the energy of the satellite."""
+        lat = self.getlatlong()[0]
         return (0.5*self._sm*(self._vr**2 + self._vt**2 + self._vp**2) -
-                G*self._mm*self._sm/self._r)
+                forces.wgs84_pot(self._r, lat)*self._sm/self._r)
 
     def get_a(self):
         """Return the semi major axis of the satellite."""
@@ -122,6 +124,30 @@ class Satellite(orb.OrbParam3D):
         true_th = self.true_an()
         return h_mom, inc, cap_omega, ecc, small_omega, true_th
 
+    def rk4_step_sat(self, dtime):
+        """Return rk4 method."""
+        states = self.getstate()
+        time = self.gettime()
+        states = np.append(states.copy(), time)
+        states_new = rk.rk4_step(diff_func, states, dtime)
+        self.setstates(states_new[:-1])
+        self.settime(states_new[-1])
+
+
+def diff_func(state):
+    """Return the differential at the given state."""
+    var = Satellite()
+    var.setstates(state[:-1])
+    var.settime(state[-1])
+    dstate = np.zeros_like(state)
+    dstate[-1] = 1.0
+    dstate[0] = state[1]
+    dstate[2] = state[3]/(state[0])
+    dstate[4] = state[5]/(state[0]*np.sin(state[2]))
+    acc = tot_acc(var)
+    dstate[1], dstate[3], dstate[5] = var.getvdot(acc[0], acc[1], acc[2])
+    return dstate
+
 
 def twobody_acc(sat):
     """Get the two body acceleration on the satellite."""
@@ -153,7 +179,7 @@ def getorbit(sat, tfinal, tstep, trec):
     s_major_arr = np.zeros(n_tvals)
     count = 0
     for i in range(ntimes):
-        sat.rk4_step(tstep, tot_acc)
+        sat.rk4_step_sat(tstep)
         if i % (trec/tstep) == 0:
             state_arr[:, count] = sat.getstate()
             orbelem_arr[:, count] = sat.orb_elem()

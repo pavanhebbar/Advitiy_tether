@@ -86,10 +86,10 @@ class OrbParam3D(object):
         self._vr = np.dot(posxyz, vel)/np.linalg.norm(posxyz)
         self._vt = (self._vr*posxyz[2] - vel[2]*self._r)/(self._r**2 -
                                                           posxyz[2]**2)**0.5
-        self._vp = ((posxyz[0]*vel[1] - posxyz[1]*vel[2]) /
+        self._vp = ((posxyz[0]*vel[1] - posxyz[1]*vel[0]) /
                     np.linalg.norm(posxyz[0:2]))
 
-    def __settime(self, time):
+    def settime(self, time):
         """Set time.
 
         Private
@@ -177,15 +177,15 @@ class OrbParam3D(object):
             if i < 2:
                 state_n = state0 + k[:, i]/2.0
                 self.setstates(state_n)
-                self.__settime(time0 + tstep/2.0)
+                self.settime(time0 + tstep/2.0)
             else:
                 state_n = state0 + k[:, i]
                 self.setstates(state_n)
-                self.__settime(time0 + tstep)
+                self.settime(time0 + tstep)
         state_n = state0 + (k[:, 0] + 2*k[:, 1] + 2*k[:, 2] + k[:, 3])/6.0
         state_n[4] = state[4] - np.floor(state[4]/(2*np.pi))*2*np.pi
         self.setstates(state_n)
-        self.__settime(time0 + tstep)
+        self.settime(time0 + tstep)
 
     def sp_ang_mom(self):
         """Return the specific angular momentum of satellite."""
