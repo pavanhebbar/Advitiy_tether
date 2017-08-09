@@ -4,12 +4,13 @@
 import numpy as np
 import igrf12
 import rk4_step as rk
+from scipy.optimize import fsolve
 
 
 class Tether(object):
     """Class to handle tether dynamics."""
 
-    def __init__(self, tether_len=0, tether_con=0, em_current=0, t_cross=0):
+    def __init__(self, tether_len=0, tether_con=0, t_cross=0):
         """Initialize class.
 
         Inputs:
@@ -25,8 +26,10 @@ class Tether(object):
         self._len = tether_len
         self._sigma = tether_con
         self._ang = [0, 0]
-        self._curr_c = em_current
         self._dim = t_cross
+        self._la = 0   # just an initialization. Donot use this value
+        self._dlen = 0.1
+        self._i_arr = np.zeros((int)(self._len/self._dlen))
 
     def setlen(self, length):
         """Set length of tether."""
@@ -40,9 +43,9 @@ class Tether(object):
         """Set the cross section dimensions of tether."""
         self._dim = t_cross
 
-    def setemcurr(self, cath_curr):
-        """Set the current in the emitter."""
-        self._curr_c = cath_curr
+    # def setemcurr(self, cath_curr):
+    #    """Set the current in the emitter."""
+    #    self._curr_c = cath_curr
 
     def getlen(self):
         """Return tether length."""
@@ -64,22 +67,12 @@ class Tether(object):
         """Return dimensions of tether."""
         return self._dim
 
-    def getmag(self, sat):
-        """Return magnetic field at satellite position."""
-        lat, lon = sat.getlatlong()
-        rad = sat.getpos_sph()[0]
-        time = sat.gettime()
-        return getB_sph(lat, lon, rad, time)
-
-    def getind_e(self, sat):
-        """Return induced electric across tether.
-
-        Positive in upward direction.
-        """
+    def getlcap_ecef(self, sat):
+        """Return the direction of tether in ECEF frame."""
         vel = sat.getvel_sph()
-        v_abs = np.linalg.norm(vel)
         pos = sat.getpos_sph()
         vel[2] = vel[2] - 2*np.pi/86164.09164*pos[0]*np.sin(pos[1])
+        v_abs = np.linalg.norm(vel)
         l_cap_vel = [np.sin(self._ang[0])*np.cos(self._ang[1]),
                      np.sin(self._ang[0])*np.sin(self._ang[1]),
                      np.cos(self._ang[0])]
@@ -88,10 +81,21 @@ class Tether(object):
                        vel[1]/(vel[1]**2 + vel[2]**2)**0.5],
                       [(vel[1]**2 + vel[2]**2)**0.5/v_abs,
                        -1*(vel[0]*vel[1])/(v_abs*(vel[1]**2 + vel[2]**2)**0.5),
-                       -1*(vel[0]*vel[2])/(v_abs*(vel[1]**2 + vel[2]**2)**0.5)]
-                     ]
+                       -1*(vel[0]*vel[2]) /
+                       (v_abs*(vel[1]**2 + vel[2]**2)**0.5)]]
         l_cap_rtp = np.dot(np.transpose(vel_to_rtp), l_cap_vel)
-        mag_vec = self.getmag(sat)
+        return l_cap_rtp
+
+    def getind_e(self, sat):
+        """Return induced electric across tether.
+
+        Positive in upward direction.
+        """
+        vel = sat.getvel_sph()
+        pos = sat.getpos_sph()
+        vel[2] = vel[2] - 2*np.pi/86164.09164*pos[0]*np.sin(pos[1])
+        l_cap_rtp = self.getlcap_ecef(sat)
+        mag_vec = getmag(sat)
         return np.dot(np.cross(vel, mag_vec), l_cap_rtp)
 
     def getconst(self, sat):
@@ -102,37 +106,47 @@ class Tether(object):
             area = np.pi*self._dim[0]**2/4.0
         elif len(self._dim) == 2:
             area = self._dim[0]*self._dim[1]
-        len0 = (9*np.pi*9.109E-31*(3.538E7)**2*e_ind*area/(128*(1.602E-19)**2 *
-                                                           n_inf**2))
+        len0 = ((9*np.pi*9.109E-31*self._sigma**2*abs(e_ind)*area) /
+                (128*(1.602E-19)**3*n_inf**2))**(1.0/3)
         curr0 = self._sigma*e_ind*area
-        volt0 = e_ind*len0
+        volt0 = abs(e_ind)*len0
         return len0, curr0, volt0
 
+    def setlamda_a(self, sat):
+        """Solve lamda_a for given eps_b."""
+        len0 = self.getconst(sat)[0]
+        eps_b = self._len/len0
+        lamda_a = fsolve(solvefunc_eps, 0.9999, eps_b)
+        self._la = lamda_a
 
-    def get_iv(self, sat):
+    def set_iv(self, sat):
         """Get the voltage and current in the tether.
 
         Assumed the ion currentis negligible.
         Assumed that lambda_c is 0
         """
-        lambda_c = 0
-        len0, curr0, volt0 = self.getconst()
-        gamma_c = self._curr_c/curr0
-        lambda_a = (lambda_c**1.5 - gamma_c**2 + 2*gamma_c)**(2/3)
-        dlen = 0.1
-        deps = dlen/len0
-        nlen = (int)(self._len/dlen)
+        len0, curr0 = self.getconst(sat)[:-1]
+        lambda_a = self._la
+        deps = self._dlen/len0
+        nlen = (int)(self._len/self._dlen)
         lambda_arr = np.zeros(nlen)
         gamma_arr = np.zeros(nlen)
+        lambda_arr[0] = lambda_a
+        for i, gamma in enumerate(gamma_arr[:-1]):
+            state_new = rk.rk4_step(diff_iv, np.array([gamma, lambda_arr[i]]),
+                                    deps)
+            gamma_arr[i+1] = state_new[0]
+            lambda_arr[i+1] = state_new[1]
+        self._i_arr = gamma_arr*curr0
 
     def accln(self, sat):
         """Get acceleration due to tether."""
-        a_r = 0
-        B_r, B_t, B_p = self.getB(sat)
-        mass = sat.getmass()
-        a_t = -1*self.getcurr(sat)*self._len*B_p/mass
-        a_p = self.getcurr(sat)*self._len*B_t/mass
-        return a_r, a_t, a_p
+        mass = sat.get_satmass()
+        mag_vec = getmag(sat)
+        lcap_ecef = self.getlcap_ecef(sat)
+        force = np.cross(lcap_ecef, mag_vec)*np.sum(self._i_arr)*self._dlen
+        acc = force/mass
+        return acc
 
 
 def diff_iv(state):
@@ -140,27 +154,59 @@ def diff_iv(state):
 
     state - [gamma, lambda]
     """
-    return np.array([0.75*state[1]**0.5, state[0] - 1])
+    state_n = state.copy()
+    if state_n[1] <= 0:
+        state_n[1] = 0
+    return np.array([0.75*state_n[1]**0.5, state_n[0] - 1])
 
 
-def getB_NED(lat, longit, r, t):  # time in decimal year
+def diff_eps(state):
+    """Return differenial to calculate the epsilon from lamda."""
+    dstate = np.zeros(3)
+    dstate[0] = (state[1]**1.5 - state[2]**1.5 + 1)**-0.5
+    dstate[1] = 1.0
+    return dstate
+
+
+def get_epsb(lamda_a):
+    """Return eps_b given lamda_a."""
+    state = np.array([0, 0, lamda_a])
+    dlamda = lamda_a/100.0
+    if lamda_a == 1:
+        state[0] = 4*dlamda**0.25
+        state[1] = dlamda
+    while state[1] < lamda_a:
+        state = rk.rk4_step(diff_eps, state.copy(), dlamda)
+    return state[0]
+
+
+def solvefunc_eps(lamda_a, eps_b):
+    """Return difference between eps for lamda_a and eps_b."""
+    return get_epsb(lamda_a) - eps_b
+
+
+def getmag_ned(lat, lon, rad, time):  # time in seconds
     """Get B in NED frame."""
-    longit = longit*180/np.pi
+    lon = lon*180/np.pi
     colat = (np.pi/2.0 - lat)*180/np.pi
-    t = 2017 + t/(365.3422*86400)
-    B_x, B_y, B_z, B_t = igrf12.igrf12syn(0, t, 2, r*10**-3, colat, longit)
-    return B_x*10**-9, B_y*10**-9, B_z*10**-9
+    time = 2017 + time/(365.3422*86400)
+    mag_x, mag_y, mag_z = igrf12.igrf12syn(0, time, 2, rad*10**-3, colat,
+                                           lon)[:-1]
+    return mag_x*10**-9, mag_y*10**-9, mag_z*10**-9
 
 
-def getB_ecef(lat, longit, r, t):
+def getmag_ecef(lat, longit, rad, time):
     """Return B in ECEF spherical coordinates."""
-    B_north, B_east, B_down = getB_NED(lat, longit, r, t)
-    B_r = -1*B_down
-    B_t = -1*B_north
-    B_p = B_east
-    return B_r, B_t, B_p
+    mag_north, mag_east, mag_down = getmag_ned(lat, longit, rad, time)
+    mag_r = -1*mag_down
+    mag_t = -1*mag_north
+    mag_p = mag_east
+    return mag_r, mag_t, mag_p
 
-def getB_sph(lat, longit, r, t):
-    """Return B in spherical coordinates - ECI."""
-    B_r_ec, B_t_ec, B_p_ec = getB_ecef(lat, longit, r, t)
-    alp = 2*np.pi/86164.09164*t
+
+def getmag(sat):
+    """Return magnetic field on satellite."""
+    rad = sat.getpos_sph()
+    time = sat.gettime()
+    lat, lon = sat.getlatlon()
+    return getmag_ecef(lat, lon, rad, time)

@@ -86,7 +86,8 @@ def wgs84_pot(rad, lat):
     j2val = 1.081874e-3
     aval = 6378137
     muval = 3.986004418e14
-    return -1*muval/rad*(1 - j2val*aval**2/(2*rad**3)*(3*np.sin(lat)**2 - 1))
+    return -1*muval/rad*(1 - j2val*aval**2/(2*rad**2)*(3*np.sin(lat)**2 - 1))
+
 
 def gravity_wgs84(rad, lat):
     """Return gravity acc to wgs84 model."""

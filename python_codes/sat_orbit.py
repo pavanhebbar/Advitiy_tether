@@ -1,11 +1,13 @@
 """Defines a class to handle basic parameters of satellite."""
 
+import copy
 import numpy as np
 import orbit_state as orb
 import tether as teth
 import forces
 import matplotlib.pyplot as plt
 import rk4_step as rk
+
 
 G = 6.67408e-11
 M_EARTH = 5.972e24
@@ -65,13 +67,13 @@ class Satellite(orb.OrbParam3D):
 
     def geten(self):
         """Return the energy of the satellite."""
-        lat = self.getlatlong()[0]
-        return (0.5*self._sm*(self._vr**2 + self._vt**2 + self._vp**2) -
-                forces.wgs84_pot(self._r, lat)*self._sm/self._r)
+        lat = self.getlatlon()[0]
+        return (0.5*self._sm*(self._vr**2 + self._vt**2 + self._vp**2) +
+                forces.wgs84_pot(self._r, lat)*self._sm)
 
     def get_a(self):
         """Return the semi major axis of the satellite."""
-        return -G*self._mm*self._sm/self._r
+        return -G*self._mm*self._sm/self.geten()
 
     def get_ecc(self):
         """Return eccentricity of orbit."""
@@ -126,27 +128,36 @@ class Satellite(orb.OrbParam3D):
 
     def rk4_step_sat(self, dtime):
         """Return rk4 method."""
-        states = self.getstate()
-        time = self.gettime()
-        states = np.append(states.copy(), time)
-        states_new = rk.rk4_step(diff_func, states, dtime)
-        self.setstates(states_new[:-1])
-        self.settime(states_new[-1])
+        sat_new = rk.rk4_step(diff_func, self, dtime,
+                              inc_state_sat)
+        self.setstates(sat_new.getstate())
+        self.settime(sat_new.gettime())
 
 
-def diff_func(state):
-    """Return the differential at the given state."""
-    var = Satellite()
-    var.setstates(state[:-1])
-    var.settime(state[-1])
-    dstate = np.zeros_like(state)
+def diff_func(sat):
+    """Return the differential at the given state of the satellite."""
+    state = sat.getstate()
+    dstate = np.zeros(7)
     dstate[-1] = 1.0
     dstate[0] = state[1]
     dstate[2] = state[3]/(state[0])
     dstate[4] = state[5]/(state[0]*np.sin(state[2]))
-    acc = tot_acc(var)
-    dstate[1], dstate[3], dstate[5] = var.getvdot(acc[0], acc[1], acc[2])
+    acc = tot_acc(sat)
+    dstate[1], dstate[3], dstate[5] = sat.getvdot(acc[0], acc[1], acc[2])
     return dstate
+
+
+def inc_state_sat(sat, dstate):
+    """Increase state by dstate."""
+    state = sat.getstate()
+    time = sat.gettime()
+    sat_temp = copy.deepcopy(sat)
+    state_new = state.copy()
+    for i, elem in enumerate(state):
+        state_new[i] = elem + dstate[i]
+    sat_temp.setstates(state_new)
+    sat_temp.settime(time + dstate[-1])
+    return sat_temp
 
 
 def twobody_acc(sat):
@@ -161,7 +172,9 @@ def tot_acc(sat):
     pos = sat.getpos_sph()
     lat = sat.getlatlon()[0]
     g_acc = forces.gravity_wgs84(pos[0], lat)
-    return g_acc
+    tether = sat.get_tether()
+    t_acc = tether.accln(sat)
+    return g_acc + t_acc
 
 
 def getorbit(sat, tfinal, tstep, trec):
@@ -184,6 +197,9 @@ def getorbit(sat, tfinal, tstep, trec):
             state_arr[:, count] = sat.getstate()
             orbelem_arr[:, count] = sat.orb_elem()
             s_major_arr[count] = sat.get_a()
+            # tether = sat.get_tether()
+            # tether.setlamda_a(sat)
+            # tether.set_iv(sat)
             print state_arr[0, count]
             print count
             count += 1
@@ -208,16 +224,26 @@ def test_circular():
     state = np.array([7.048e6, 0.0, np.pi/2.0, -7446.8984446559243, 0.0,
                       -1046.5933233558835])
     pratham = Satellite(10.0, state)
-    state_arr, orbelem_arr = getorbit(pratham, 86400, 0.1, 100)[:2]
-    time_array = np.linspace(0, 400, len(state_arr[0, :]))
+    p_tether = teth.Tether(500, 3.528e7, [0.001])
+    p_tether.setlamda_a(pratham)
+    p_tether.set_iv(pratham)
+    pratham.set_tether(p_tether)
+    state_arr, orbelem_arr, a_arr = getorbit(pratham, 86400, 0.1, 100)
+    time_array = np.linspace(0, 86400, len(state_arr[0, :]))
     plotfig("test_r.png", "r v/s t", "t", "r", [time_array], [state_arr[0, :]],
             ["r"])
     plotfig("test_th.png", "theta v/s t", "t", "theta", [time_array],
             [state_arr[2, :]], ["theta"])
     plotfig("test_p.png", "phi v/s t", "t", "phi", [time_array],
             [state_arr[4, :]], ["phi"])
+    cap_omega = orbelem_arr[2, :]
+    for i, elem in enumerate(cap_omega):
+        if elem > np.pi:
+            cap_omega[i] = elem - 2*np.pi
     plotfig("test_comega.png", "omega v/s t", "t", "omega", [time_array],
-            [orbelem_arr[2, :]], ["omega"])
+            [cap_omega*180/np.pi], ["omega"])
+    plotfig("test_a.png", "a v/s t", "t", "a", [time_array], [a_arr],
+            ["omega"])
     # r_array = state_arr[0, :]
     # theta_array = state_arr[2, :]
     # phi_array = state_arr[4, :]
@@ -231,4 +257,5 @@ def test_circular():
     return orbelem_arr[2, :]*180/np.pi
 
 
-test_circular()
+if __name__ == '__main__':
+    test_circular()

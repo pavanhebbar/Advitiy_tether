@@ -237,5 +237,39 @@ def test_circular():
     assert np.max(phi_array) < 2*np.pi
 
 
+    def rk4_step(self, tstep, acc_f):
+        """Return the state after time dt.
+
+        Inputs
+        tstep - time step
+        acc_f - function to calculate acceleration
+        """
+        state0 = self.getstate()
+        time0 = self.gettime()
+        k = np.zeros((6, 4))
+        for i in range(4):
+            state = self.getstate()
+            k[0, i] = state[1]*tstep
+            k[2, i] = state[3]/state[0]*tstep
+            k[4, i] = state[5]/(state[0]*np.sin(state[2]))*tstep
+            accs = acc_f(self)
+            vdots = self.getvdot(accs[0], accs[1], accs[2])
+            k[1, i] = vdots[0]*tstep
+            k[3, i] = vdots[1]*tstep
+            k[5, i] = vdots[2]*tstep
+            if i < 2:
+                state_n = state0 + k[:, i]/2.0
+                self.setstates(state_n)
+                self.__settime(time0 + tstep/2.0)
+            else:
+                state_n = state0 + k[:, i]
+                self.setstates(state_n)
+                self.__settime(time0 + tstep)
+        state_n = state0 + (k[:, 0] + 2*k[:, 1] + 2*k[:, 2] + k[:, 3])/6.0
+        state_n[4] = state[4] - np.floor(state[4]/(2*np.pi))*2*np.pi
+        self.setstates(state_n)
+        self.__settime(time0 + tstep)
+
+
 if __name__ == "__main__":
     test_circular()
