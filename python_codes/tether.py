@@ -144,6 +144,9 @@ class Tether(object):
         mass = sat.get_satmass()
         mag_vec = getmag(sat)
         lcap_ecef = self.getlcap_ecef(sat)
+        # field_ind = self.getind_e(sat)
+        # curr = self._sigma*field_ind*np.pi*self._dim[0]**2/4.0
+        # force = np.cross(lcap_ecef, mag_vec)*curr*self._len
         force = np.cross(lcap_ecef, mag_vec)*np.sum(self._i_arr)*self._dlen
         acc = force/mass
         return acc

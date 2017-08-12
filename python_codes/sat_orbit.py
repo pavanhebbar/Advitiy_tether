@@ -70,10 +70,11 @@ class Satellite(orb.OrbParam3D):
         lat = self.getlatlon()[0]
         return (0.5*self._sm*(self._vr**2 + self._vt**2 + self._vp**2) +
                 forces.wgs84_pot(self._r, lat)*self._sm)
+        # G*self._mm*self._sm/self._r)
 
     def get_a(self):
         """Return the semi major axis of the satellite."""
-        return -G*self._mm*self._sm/self.geten()
+        return 0.5*-G*self._mm*self._sm/self.geten()
 
     def get_ecc(self):
         """Return eccentricity of orbit."""
@@ -155,6 +156,9 @@ def inc_state_sat(sat, dstate):
     state_new = state.copy()
     for i, elem in enumerate(state):
         state_new[i] = elem + dstate[i]
+    if state_new[-2] >= 2*np.pi or state_new[-2] < 0:
+        state_new[-2] = (state_new[-2] -
+                         np.floor((state_new[-2]/2*np.pi))*2*np.pi)
     sat_temp.setstates(state_new)
     sat_temp.settime(time + dstate[-1])
     return sat_temp
@@ -171,6 +175,7 @@ def tot_acc(sat):
     """Get the total acceleration on the satellite."""
     pos = sat.getpos_sph()
     lat = sat.getlatlon()[0]
+    # g_acc = np.array([-G*M_EARTH/pos[0]**2, 0, 0])
     g_acc = forces.gravity_wgs84(pos[0], lat)
     tether = sat.get_tether()
     t_acc = tether.accln(sat)
@@ -197,9 +202,9 @@ def getorbit(sat, tfinal, tstep, trec):
             state_arr[:, count] = sat.getstate()
             orbelem_arr[:, count] = sat.orb_elem()
             s_major_arr[count] = sat.get_a()
-            # tether = sat.get_tether()
-            # tether.setlamda_a(sat)
-            # tether.set_iv(sat)
+            tether = sat.get_tether()
+            tether.setlamda_a(sat)
+            tether.set_iv(sat)
             print state_arr[0, count]
             print count
             count += 1
@@ -228,8 +233,8 @@ def test_circular():
     p_tether.setlamda_a(pratham)
     p_tether.set_iv(pratham)
     pratham.set_tether(p_tether)
-    state_arr, orbelem_arr, a_arr = getorbit(pratham, 86400, 0.1, 100)
-    time_array = np.linspace(0, 86400, len(state_arr[0, :]))
+    state_arr, orbelem_arr, a_arr = getorbit(pratham, 6400, 0.1, 100)
+    time_array = np.linspace(0, 6400, len(state_arr[0, :]))
     plotfig("test_r.png", "r v/s t", "t", "r", [time_array], [state_arr[0, :]],
             ["r"])
     plotfig("test_th.png", "theta v/s t", "t", "theta", [time_array],
